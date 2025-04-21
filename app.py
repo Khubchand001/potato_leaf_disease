@@ -3,53 +3,12 @@ from PIL import Image
 import numpy as np
 import tensorflow as tf
 
-# Set page config
-st.set_page_config(page_title="Potato Leaf Disease Detection", layout="centered")
-
-# Load trained model
+# Load model
 model = tf.keras.models.load_model("models/potato_model.h5")
 classes = ['Early Blight', 'Late Blight', 'Healthy']
 
-# Custom CSS styling
-st.markdown("""
-    <style>
-    html, body, [class*="css"]  {
-        font-family: 'Segoe UI', sans-serif;
-        background-color: #f7f7f7;
-    }
-    .main-title {
-        text-align: center;
-        font-size: 3em;
-        font-weight: bold;
-        color: #2d2d2d;
-    }
-    .sub-title {
-        text-align: center;
-        font-size: 1.1em;
-        margin-bottom: 30px;
-        color: #666;
-    }
-    .uploaded-img {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 20px;
-    }
-    .prediction-box {
-        border: 2px solid #25a244;
-        border-radius: 10px;
-        padding: 15px;
-        background-color: #eafbea;
-        font-size: 1.1em;
-        color: #1c6c39;
-        text-align: center;
-        font-weight: 600;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# Titles
-st.markdown('<div class="main-title">🥔 Potato Leaf Disease Detection</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">Upload an image of a potato leaf to identify disease type</div>', unsafe_allow_html=True)
+# Page setup
+st.set_page_config(page_title="Potato Leaf Disease Detection", layout="centered")
 
 # Prediction function
 def predict(img):
@@ -59,35 +18,83 @@ def predict(img):
     pred = model.predict(img)[0]
     return classes[np.argmax(pred)], pred
 
-# File uploader
-uploaded_file = st.file_uploader("Choose a leaf image...", type=["jpg", "png", "jpeg"])
+# Custom CSS for responsiveness
+st.markdown("""
+    <style>
+    body {
+        background-color: #f8f9fa;
+        font-family: 'Segoe UI', sans-serif;
+    }
+    .title {
+        text-align: center;
+        font-size: 2.5em;
+        margin-bottom: 0.3em;
+        color: #2d2d2d;
+    }
+    .subtitle {
+        text-align: center;
+        font-size: 1em;
+        color: #555;
+        margin-bottom: 2em;
+    }
+    .image-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1em;
+    }
+    .result-box {
+        background-color: #eafbea;
+        border-left: 6px solid #25a244;
+        padding: 1em;
+        margin-top: 1em;
+        font-size: 1.1em;
+        color: #1c6c39;
+        text-align: center;
+        border-radius: 8px;
+    }
+    .footer {
+        margin-top: 3em;
+        text-align: center;
+        font-size: 0.9em;
+        color: #aaa;
+    }
+    @media (max-width: 768px) {
+        .title { font-size: 2em; }
+        .subtitle { font-size: 0.95em; }
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# If file is uploaded
+# Title
+st.markdown('<div class="title">🥔 Potato Leaf Disease Detection</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Upload an image of a potato leaf and let the model detect the disease</div>', unsafe_allow_html=True)
+
+# File uploader
+uploaded_file = st.file_uploader("📤 Upload Leaf Image", type=["jpg", "png", "jpeg"])
+
 if uploaded_file:
     img = Image.open(uploaded_file)
 
-    st.markdown('<div class="uploaded-img">', unsafe_allow_html=True)
+    # Show image
+    st.markdown('<div class="image-container">', unsafe_allow_html=True)
     st.image(img, caption='Uploaded Image', use_container_width=True)
-
-
-
     st.markdown('</div>', unsafe_allow_html=True)
 
-    with st.spinner('Analyzing the image...'):
+    # Predict
+    with st.spinner('Analyzing...'):
         label, confidence = predict(img)
 
-    # Display result
-    st.markdown(f'<div class="prediction-box">🩺 Prediction Result: {label}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="result-box">🩺 Prediction: <strong>{label}</strong></div>', unsafe_allow_html=True)
 
-    # Show confidence scores
-    st.write("📊 **Confidence Scores:**")
+    # Show confidence
+    st.subheader("📊 Confidence Scores:")
     for i, cls in enumerate(classes):
+        st.write(f"**{cls}**: {confidence[i]*100:.2f}%")
         st.progress(float(confidence[i]))
 
-        st.markdown(f"- **{cls}**: `{confidence[i]*100:.2f}%`")
+# Footer
 st.markdown("""
-    <hr style="margin-top: 50px; margin-bottom: 10px;">
-    <div style="text-align: center; color: #888; font-size: 0.9em;">
+    <div class="footer">
         Made with ❤️ by <strong>Khubchand</strong>
     </div>
 """, unsafe_allow_html=True)
