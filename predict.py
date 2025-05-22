@@ -1,20 +1,34 @@
-import tensorflow as tf
 import numpy as np
-from tensorflow.keras.preprocessing import image
-import sys
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.image import img_to_array
+from PIL import Image
+import os
 
-classes = ['Early Blight', 'Late Blight', 'Healthy']
-model = tf.keras.models.load_model("models/potato_model.h5")
+# Load model and class label mapping
+model_path = "models/potato_model.h5"
+label_map_path = "models/label_map.npy"
 
-def predict_image(img_path):
-    img = image.load_img(img_path, target_size=(128, 128))
-    img_array = image.img_to_array(img) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
-    prediction = model.predict(img_array)
-    class_index = np.argmax(prediction)
-    return classes[class_index]
+# Cache the model for efficient reuse
+@tf.keras.utils.register_keras_serializable()
+def load_model_and_labels():
+    model = load_model(model_path)
+    label_map = np.load(label_map_path, allow_pickle=True).item()
+    labels = {v: k for k, v in label_map.items()}
+    return model, labels
 
-if __name__ == "__main__":
-    img_path = sys.argv[1]
-    result = predict_image(img_path)
-    print("Prediction:", result)
+model, labels = load_model_and_labels()
+
+def preprocess_image(image, target_size=(224, 224)):
+    image = image.convert("RGB")
+    image = image.resize(target_size)
+    image_array = img_to_array(image) / 255.0
+    return np.expand_dims(image_array, axis=0)
+
+def predict(image):
+    img_array = preprocess_image(image)
+    preds = model.predict(img_array)[0]
+    pred_class = np.argmax(preds)
+    confidence = preds[pred_class]
+    label = labels[pred_class]
+    return label, confidence
